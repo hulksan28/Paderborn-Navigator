@@ -768,6 +768,19 @@
                     <h3 class="font-bold text-lg mb-4">⏰ Upcoming</h3>
                     <div id="upcomingList" class="space-y-2 text-sm"></div>
                 </div>
+
+                <!-- Weekly Schedule -->
+                <div class="glass-card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">🗓️ Weekly Schedule</h3>
+                        <button onclick="openScheduleModal()" class="btn-primary text-sm px-3 py-1.5">⚙️ Edit</button>
+                    </div>
+                    <div id="scheduleList" class="space-y-3"></div>
+                    <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm">
+                        <span class="text-slate-500">Total Weekly Target</span>
+                        <span class="font-bold text-emerald-600" id="scheduleTotalHours">0 hrs</span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -879,6 +892,18 @@
         </div>
     </div>
 
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="modal-overlay">
+        <div class="modal-content max-w-lg">
+            <h3 class="text-lg font-bold mb-4">🗓️ Edit Weekly Schedule</h3>
+            <div id="scheduleModalItems" class="space-y-3 max-h-[400px] overflow-y-auto"></div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeScheduleModal()" class="btn-secondary flex-1">Cancel</button>
+                <button onclick="saveSchedule()" class="btn-primary flex-1">Save Schedule</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============ STATE & CONFIG ============
         const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
@@ -986,7 +1011,15 @@
                 { id: 2, name: 'Travel Fund', current: 200, target: 500, color: 'blue' },
                 { id: 3, name: 'New Laptop', current: 300, target: 800, color: 'amber' }
             ],
-            settings: { currency: '€', theme: 'light' }
+            settings: { currency: '€', theme: 'light' },
+            schedule: [
+                { id: 1, name: 'Studies', emoji: '📚', targetHours: 25, loggedHours: 0, color: 'blue' },
+                { id: 2, name: 'Student Job', emoji: '💼', targetHours: 17, loggedHours: 0, color: 'emerald' },
+                { id: 3, name: 'Freelancing', emoji: '💻', targetHours: 6, loggedHours: 0, color: 'purple' },
+                { id: 4, name: 'Travel/Rest', emoji: '✈️', targetHours: 10, loggedHours: 0, color: 'amber' },
+                { id: 5, name: 'Exercise', emoji: '🏋️', targetHours: 4, loggedHours: 0, color: 'rose' },
+                { id: 6, name: 'Leisure', emoji: '🎮', targetHours: 8, loggedHours: 0, color: 'indigo' }
+            ]
         };
 
         let currentMonth = new Date().getMonth();
@@ -1022,6 +1055,7 @@
                     // Merge arrays if not present in saved data
                     if (!data.food) data.food = state.food;
                     if (!data.goals) data.goals = state.goals;
+                    if (!data.schedule) data.schedule = state.schedule;
                     state = { ...state, ...data };
 
                     applyTheme();
@@ -1069,6 +1103,7 @@
             // New render calls
             renderFood();
             renderGoals();
+            renderSchedule();
         }
 
         // omitted updateBudgetUI...
@@ -1682,6 +1717,96 @@
             state.food.splice(index, 1);
             renderFood();
             autoSave();
+        }
+
+        // ============ SCHEDULE ============
+        function renderSchedule() {
+            const container = document.getElementById('scheduleList');
+            if (!container) return;
+
+            const totalHours = state.schedule.reduce((sum, s) => sum + s.targetHours, 0);
+            document.getElementById('scheduleTotalHours').textContent = `${totalHours} hrs`;
+
+            container.innerHTML = state.schedule.map((s, i) => {
+                const percent = s.targetHours > 0 ? Math.min((s.loggedHours / s.targetHours) * 100, 100) : 0;
+                return `
+                <div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${s.emoji}</span>
+                            <span class="font-medium text-sm dark:text-slate-200">${s.name}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500">${s.loggedHours}/${s.targetHours} hrs</span>
+                            <button onclick="logScheduleHours(${i})" class="text-xs bg-${s.color}-100 dark:bg-${s.color}-900/30 text-${s.color}-600 dark:text-${s.color}-400 px-2 py-1 rounded-lg hover:opacity-80">+1 hr</button>
+                        </div>
+                    </div>
+                    <div class="h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                        <div class="h-full bg-${s.color}-500 rounded-full transition-all" style="width: ${percent}%"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function logScheduleHours(index) {
+            state.schedule[index].loggedHours += 1;
+            renderSchedule();
+            autoSave();
+        }
+
+        function openScheduleModal() {
+            document.getElementById('scheduleModal').classList.add('active');
+            const container = document.getElementById('scheduleModalItems');
+            container.innerHTML = state.schedule.map((s, i) => `
+                <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                    <span class="text-xl">${s.emoji}</span>
+                    <div class="flex-1">
+                        <input type="text" value="${s.name}" id="schedName${i}" class="input-field text-sm mb-1" placeholder="Activity Name">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs text-slate-500">Target:</label>
+                            <input type="number" value="${s.targetHours}" id="schedTarget${i}" class="input-field w-20 text-sm" placeholder="Hrs">
+                            <label class="text-xs text-slate-500">Logged:</label>
+                            <input type="number" value="${s.loggedHours}" id="schedLogged${i}" class="input-field w-20 text-sm" placeholder="Hrs">
+                        </div>
+                    </div>
+                    <button onclick="removeScheduleItem(${i})" class="text-rose-500 hover:text-rose-400 font-bold text-xl">×</button>
+                </div>
+            `).join('') + `
+                <button onclick="addScheduleItem()" class="w-full py-2 border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors text-sm">+ Add Activity</button>
+            `;
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').classList.remove('active');
+        }
+
+        function saveSchedule() {
+            state.schedule = state.schedule.map((s, i) => ({
+                ...s,
+                name: document.getElementById(`schedName${i}`)?.value || s.name,
+                targetHours: parseFloat(document.getElementById(`schedTarget${i}`)?.value) || 0,
+                loggedHours: parseFloat(document.getElementById(`schedLogged${i}`)?.value) || 0
+            }));
+            closeScheduleModal();
+            renderSchedule();
+            autoSave();
+        }
+
+        function addScheduleItem() {
+            state.schedule.push({
+                id: Date.now(),
+                name: 'New Activity',
+                emoji: '📌',
+                targetHours: 5,
+                loggedHours: 0,
+                color: 'slate'
+            });
+            openScheduleModal();
+        }
+
+        function removeScheduleItem(index) {
+            state.schedule.splice(index, 1);
+            openScheduleModal();
         }
 
         // ============ GOALS ============

@@ -35,6 +35,14 @@ const defaultData = {
         { id: 4, name: 'Snacks & Drinks', cost: 15 }
     ],
     goals: [],
+    schedule: [
+        { id: 1, name: 'Studies', emoji: '📚', targetHours: 25, loggedHours: 0, color: 'blue' },
+        { id: 2, name: 'Student Job', emoji: '💼', targetHours: 17, loggedHours: 0, color: 'emerald' },
+        { id: 3, name: 'Freelancing', emoji: '💻', targetHours: 6, loggedHours: 0, color: 'purple' },
+        { id: 4, name: 'Travel/Rest', emoji: '✈️', targetHours: 10, loggedHours: 0, color: 'amber' },
+        { id: 5, name: 'Exercise', emoji: '🏋️', targetHours: 4, loggedHours: 0, color: 'rose' },
+        { id: 6, name: 'Leisure', emoji: '🎮', targetHours: 8, loggedHours: 0, color: 'indigo' }
+    ],
     settings: { currency: '€', theme: 'light' }
 };
 
