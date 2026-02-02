@@ -1,0 +1,14 @@
+{
+  "name": "paderborn-navigator",
+  "version": "1.0.0",
+  "description": "Fullstack Student Hub - Budget, Ledger, Study Planner",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}

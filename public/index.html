@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paderborn Navigator Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                fontFamily: {
+                    sans: ['Plus Jakarta Sans', 'sans-serif'],
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        :root {
+            --emerald-500: #10b981;
+            --emerald-600: #059669;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: rgba(226, 232, 240, 0.8);
+        }
+
+        body.dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.9);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(51, 65, 85, 0.8);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 50%, #ecfeff 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        body.dark .glass-card {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-field {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 0.625rem 1rem;
+            transition: all 0.2s;
+            color: var(--text-primary);
+        }
+
+        body.dark .input-field {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--emerald-500);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .tab-btn {
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+            transform: scale(1.02);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            background: #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .calendar-day {
+            background: white;
+            padding: 0.5rem;
+            min-height: 85px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: #f0fdf4;
+        }
+
+        .calendar-day.today {
+            background: #ecfdf5;
+        }
+
+        .calendar-day.other-month {
+            color: #cbd5e1;
+            background: #fafafa;
+        }
+
+        .calendar-day .day-number {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .calendar-day.today .day-number {
+            background: var(--emerald-600);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .event-tag {
+            margin-top: 0.25rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.625rem;
+            font-weight: 600;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-exam {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .event-assignment {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .event-class {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .event-personal {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        #syncStatus {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--from) 0%, var(--to) 100%);
+            padding: 1.25rem;
+            border-radius: 1rem;
+            color: white;
+        }
+
+        .stat-card.emerald {
+            --from: #10b981;
+            --to: #059669;
+        }
+
+        .stat-card.blue {
+            --from: #3b82f6;
+            --to: #2563eb;
+        }
+
+        .stat-card.amber {
+            --from: #f59e0b;
+            --to: #d97706;
+        }
+
+        .stat-card.rose {
+            --from: #f43f5e;
+            --to: #e11d48;
+        }
+
+        .priority-high {
+            border-left: 3px solid #ef4444;
+        }
+
+        .priority-medium {
+            border-left: 3px solid #f59e0b;
+        }
+
+        .priority-low {
+            border-left: 3px solid #10b981;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            max-width: 450px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        body.dark .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .ledger-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 100px 100px 80px;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .ledger-row:hover {
+            background: #f1f5f9;
+        }
+
+        .income-text {
+            color: #10b981;
+        }
+
+        .expense-text {
+            color: #ef4444;
+        }
+
+        /* Charts container */
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="text-slate-800">
+
+    <div id="syncStatus" class="bg-slate-800 text-white opacity-0">Synced</div>
+
+    <!-- Modals -->
+    <div id="eventModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4">📅 Add Event</h3>
+            <input type="hidden" id="eventDate">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Event Title</label>
+                    <input type="text" id="eventTitle" class="input-field" placeholder="Enter event title">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Type</label>
+                    <select id="eventType" class="input-field">
+                        <option value="class">📚 Class</option>
+                        <option value="exam">📝 Exam</option>
+                        <option value="assignment">📋 Assignment</option>
+                        <option value="personal">🎯 Personal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Time (optional)</label>
+                    <input type="time" id="eventTime" class="input-field">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeEventModal()" class="btn-secondary flex-1">Cancel</button>
+                <button onclick="saveEvent()" class="btn-primary flex-1">Save Event</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="taskModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4">✅ Add Task</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Task Name</label>
+                    <input type="text" id="taskName" class="input-field" placeholder="Enter task name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Due Date</label>
+                    <input type="date" id="taskDueDate" class="input-field">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Category</label>
+                    <select id="taskCategory" class="input-field">
+                        <option value="study">📚 Study</option>
+                        <option value="assignment">📋 Assignment</option>
+                        <option value="exam">📝 Exam</option>
+                        <option value="personal">🎯 Personal</option>
+                        <option value="work">💼 Work</option>
+                        <option value="other">📦 Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Priority</label>
+                    <select id="taskPriority" class="input-field">
+                        <option value="low">🟢 Low</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="high">🔴 High</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeTaskModal()" class="btn-secondary flex-1">Cancel</button>
+                <button onclick="saveTask()" class="btn-primary flex-1">Save Task</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ledgerModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4">💰 Add Transaction</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Description</label>
+                    <input type="text" id="ledgerDesc" class="input-field" placeholder="e.g., Grocery shopping">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Amount (€)</label>
+                        <input type="number" id="ledgerAmount" class="input-field" placeholder="0.00" step="0.01">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Type</label>
+                        <select id="ledgerType" class="input-field" onchange="updateLedgerCategories()">
+                            <option value="expense">💸 Expense</option>
+                            <option value="income">💰 Income</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Date</label>
+                        <input type="date" id="ledgerDate" class="input-field">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Category</label>
+                        <select id="ledgerCategory" class="input-field">
+                            <option value="rent">🏠 Rent</option>
+                            <option value="food">🍔 Food</option>
+                            <option value="transport">🚌 Transport</option>
+                            <option value="entertainment">🎬 Entertainment</option>
+                            <option value="salary">💼 Salary</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeLedgerModal()" class="btn-secondary flex-1">Cancel</button>
+                <button onclick="saveLedgerEntry()" class="btn-primary flex-1">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-white/80 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-2.5 rounded-xl font-bold text-lg shadow-lg shadow-emerald-200">
+                    PB</div>
+                <div>
+                    <h1 class="font-bold text-xl leading-none">Paderborn Navigator</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Fullstack Student Hub</p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="toggleTheme()" id="themeToggle"
+                    class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+                    🌙
+                </button>
+                <button onclick="syncWithBackend()"
+                    class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+                    🔄 Sync
+                </button>
+                <button onclick="handleLogout()" id="logoutBtn"
+                    class="bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all hidden">
+                    🚪 Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div
+            class="flex flex-wrap gap-3 mb-10 bg-white/60 dark:bg-slate-800/60 backdrop-blur p-1.5 rounded-2xl w-fit overflow-x-auto border border-slate-200 dark:border-slate-700">
+            <button onclick="showPage('tracker')" id="btn-tracker" class="tab-btn active">📊 Budget</button>
+            <button onclick="showPage('food')" id="btn-food" class="tab-btn">🥗 Food</button>
+            <button onclick="showPage('ledger')" id="btn-ledger" class="tab-btn">📒 Ledger</button>
+            <button onclick="showPage('study')" id="btn-study" class="tab-btn">🎓 Study</button>
+            <button onclick="showPage('analytics')" id="btn-analytics" class="tab-btn">📈 Analytics</button>
+        </div>
+
+        <!-- BUDGET PAGE -->
+        <section id="page-tracker" class="space-y-8">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="stat-card emerald">
+                    <p class="text-sm opacity-80">Total Income</p>
+                    <p class="text-2xl font-bold mt-1" id="statIncome">€0</p>
+                </div>
+                <div class="stat-card rose">
+                    <p class="text-sm opacity-80">Total Expenses</p>
+                    <p class="text-2xl font-bold mt-1" id="statExpenses">€0</p>
+                </div>
+                <div class="stat-card blue">
+                    <p class="text-sm opacity-80">Balance</p>
+                    <p class="text-2xl font-bold mt-1" id="statBalance">€0</p>
+                </div>
+                <div class="stat-card amber">
+                    <p class="text-sm opacity-80">Savings Rate</p>
+                    <p class="text-2xl font-bold mt-1" id="statSavings">0%</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="glass-card p-6">
+                        <h2 class="font-bold text-lg mb-4 flex items-center gap-2">💰 Income Sources</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-sm text-slate-600 mb-1 block">Blocked Account (€)</label>
+                                <input type="number" id="incomeBlocked" value="934" onchange="updateBudget()"
+                                    class="input-field">
+                            </div>
+                            <div>
+                                <label class="text-sm text-slate-600 mb-1 block">Job Income (€)</label>
+                                <input type="number" id="incomeJob" value="538" onchange="updateBudget()"
+                                    class="input-field">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6">
+                        <h2 class="font-bold text-lg mb-4 flex items-center gap-2">💸 Monthly Expenses</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🏠</span>
+                                <div class="flex-1">
+                                    <label class="text-sm text-slate-600">Rent</label>
+                                    <input type="number" id="expRent" value="400" onchange="updateBudget()"
+                                        class="input-field mt-1">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🍔</span>
+                                <div class="flex-1">
+                                    <label class="text-sm text-slate-600">Food</label>
+                                    <input type="number" id="expFood" value="200" onchange="updateBudget()"
+                                        class="input-field mt-1">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🚌</span>
+                                <div class="flex-1">
+                                    <label class="text-sm text-slate-600">Transport</label>
+                                    <input type="number" id="expTransport" value="50" onchange="updateBudget()"
+                                        class="input-field mt-1">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🎬</span>
+                                <div class="flex-1">
+                                    <label class="text-sm text-slate-600">Entertainment</label>
+                                    <input type="number" id="expEntertainment" value="50" onchange="updateBudget()"
+                                        class="input-field mt-1">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">📦</span>
+                                <div class="flex-1">
+                                    <label class="text-sm text-slate-600">Other</label>
+                                    <input type="number" id="expOther" value="30" onchange="updateBudget()"
+                                        class="input-field mt-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 glass-card p-6">
+                    <h2 class="font-bold text-lg mb-4">📊 Cash Flow Overview</h2>
+                    <div class="chart-container">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOD PAGE -->
+        <section id="page-food" class="hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="glass-card p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold flex items-center gap-2">🥗 Monthly Food Tracker</h2>
+                            <button onclick="openFoodModal()" class="btn-primary text-sm">+ Add Item</button>
+                        </div>
+
+                        <div
+                            class="grid grid-cols-[1fr_100px_80px] gap-4 px-4 py-2 text-sm font-semibold text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                            <span>Item / Category</span>
+                            <span class="text-right">Est. Cost</span>
+                            <span class="text-right">Actions</span>
+                        </div>
+
+                        <div id="foodList" class="space-y-2 mt-4">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div
+                            class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Total Monthly Food Estimate</p>
+                            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400" id="foodTotalDisplay">
+                                €0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="stat-card emerald">
+                        <p class="text-sm opacity-80">Food Budget Status</p>
+                        <p class="text-lg font-bold mt-1">On Track</p>
+                        <p class="text-xs opacity-70 mt-2">Based on current ledger spend vs estimate</p>
+                    </div>
+
+                    <div class="glass-card p-6">
+                        <h3 class="font-bold mb-4">ℹ️ How it works</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                            Set your standard monthly costs for staples like vegetables, rice, meat, etc.
+                        </p>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">
+                            The total is used to help plan your overall budget. Actual spending is tracked in the Ledger
+                            (category: Food).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEDGER PAGE -->
+        <section id="page-ledger" class="hidden space-y-6">
+            <div class="glass-card p-6">
+                <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+                    <h2 class="text-xl font-bold">📒 Financial Ledger</h2>
+                    <div class="flex gap-3">
+                        <select id="ledgerMonthFilter" class="input-field w-auto" onchange="renderLedger()">
+                            <option value="all">All Months</option>
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <button onclick="openLedgerModal()" class="btn-primary">+ Add Entry</button>
+                    </div>
+                </div>
+
+                <!-- Ledger Headers -->
+                <div
+                    class="hidden lg:grid grid-cols-[100px_1fr_100px_100px_80px] gap-4 px-4 py-2 text-sm font-semibold text-slate-500 border-b">
+                    <span>Date</span>
+                    <span>Description</span>
+                    <span>Category</span>
+                    <span>Amount</span>
+                    <span>Actions</span>
+                </div>
+
+                <div id="ledgerRows" class="space-y-2 mt-4 max-h-[500px] overflow-y-auto"></div>
+
+                <!-- Ledger Summary -->
+                <div class="mt-6 pt-4 border-t flex flex-wrap justify-between gap-4">
+                    <div class="flex gap-6">
+                        <div>
+                            <p class="text-sm text-slate-500">Total Income</p>
+                            <p class="text-xl font-bold income-text" id="ledgerTotalIncome">€0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Total Expenses</p>
+                            <p class="text-xl font-bold expense-text" id="ledgerTotalExpenses">€0.00</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Net Balance</p>
+                        <p class="text-xl font-bold" id="ledgerNetBalance">€0.00</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STUDY PAGE -->
+        <section id="page-study" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8 glass-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">📅 Calendar</h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeMonth(-1)" class="btn-secondary px-3 py-1">←</button>
+                        <span id="currentMonthLabel" class="font-semibold min-w-[140px] text-center"></span>
+                        <button onclick="changeMonth(1)" class="btn-secondary px-3 py-1">→</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+
+                <!-- Event Legend -->
+                <div class="flex flex-wrap gap-4 mt-4 text-xs">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-200"></span> Class</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-200"></span> Exam</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-200"></span>
+                        Assignment</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-indigo-200"></span>
+                        Personal</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass-card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">✅ Tasks</h3>
+                        <button onclick="openTaskModal()" class="btn-primary text-sm px-3 py-1.5">+ Add</button>
+                    </div>
+                    <div id="taskList" class="space-y-2 max-h-[300px] overflow-y-auto"></div>
+                </div>
+
+                <div class="glass-card p-6">
+                    <h3 class="font-bold text-lg mb-4">⏰ Upcoming</h3>
+                    <div id="upcomingList" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICS PAGE -->
+        <section id="page-analytics" class="hidden space-y-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="stat-card emerald">
+                    <p class="text-sm opacity-80">This Month Income</p>
+                    <p class="text-2xl font-bold mt-1" id="analyticsMonthIncome">€0</p>
+                </div>
+                <div class="stat-card rose">
+                    <p class="text-sm opacity-80">This Month Expenses</p>
+                    <p class="text-2xl font-bold mt-1" id="analyticsMonthExpenses">€0</p>
+                </div>
+                <div class="stat-card blue">
+                    <p class="text-sm opacity-80">Avg Daily Spending</p>
+                    <p class="text-2xl font-bold mt-1" id="analyticsAvgDaily">€0</p>
+                </div>
+                <div class="stat-card amber">
+                    <p class="text-sm opacity-80">Pending Tasks</p>
+                    <p class="text-2xl font-bold mt-1" id="analyticsPendingTasks">0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card p-6">
+                    <h3 class="font-bold text-lg mb-4">💸 Spending by Category</h3>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6">
+                    <h3 class="font-bold text-lg mb-4">📈 Monthly Trend</h3>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg">🎯 Financial Goals</h3>
+                    <button onclick="openGoalModal()" class="btn-primary text-sm">+ Add Goal</button>
+                </div>
+                <div id="goalsList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="goalModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4">🎯 Edit Financial Goal</h3>
+            <input type="hidden" id="goalIndex">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Goal Name</label>
+                    <input type="text" id="goalName" class="input-field" placeholder="e.g., Emergency Fund">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Current Amount
+                        (€)</label>
+                    <input type="number" id="goalCurrent" class="input-field" placeholder="0">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Target Amount
+                        (€)</label>
+                    <input type="number" id="goalTarget" class="input-field" placeholder="1000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Color</label>
+                    <select id="goalColor" class="input-field">
+                        <option value="emerald">💚 Emerald</option>
+                        <option value="blue">💙 Blue</option>
+                        <option value="amber">🧡 Amber</option>
+                        <option value="rose">❤️ Rose</option>
+                        <option value="purple">💜 Purple</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeGoalModal()" class="btn-secondary flex-1">Cancel</button>
+                <button onclick="saveGoal()" class="btn-primary flex-1">Save Goal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="foodModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4">🥦 Edit Food Item</h3>
+            <input type="hidden" id="foodIndex">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Item Name</label>
+                    <input type="text" id="foodName" class="input-field" placeholder="e.g., Rice (5kg)">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Estimated Monthly
+                        Cost (€)</label>
+                    <input type="number" id="foodCost" class="input-field" placeholder="10">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeFoodModal()" class="btn-secondary flex-1">Cancel</button>
+                <button onclick="saveFoodItem()" class="btn-primary flex-1">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ STATE & CONFIG ============
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+        let currentUser = localStorage.getItem('currentUser');
+
+        function checkAuth() {
+            if (!currentUser) {
+                document.getElementById('authOverlay').classList.remove('hidden');
+            } else {
+                document.getElementById('authOverlay').classList.add('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                syncWithBackend();
+            }
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            if (!u || !p) return alert('Enter credentials');
+
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (!res.headers.get('content-type')?.includes('application/json')) {
+                    throw new Error('Server update pending. Please restart the backend server.');
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    currentUser = u;
+                    localStorage.setItem('currentUser', u);
+                    checkAuth();
+                    updateAllUI();
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) { alert(e.message || 'Login failed'); }
+        }
+
+        async function handleSignup() {
+            const u = document.getElementById('signupUser').value;
+            const p = document.getElementById('signupPass').value;
+            if (!u || !p) return alert('Enter credentials');
+
+            try {
+                const res = await fetch(`${API_URL}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (!res.headers.get('content-type')?.includes('application/json')) {
+                    throw new Error('Server update pending. Please restart the backend server.');
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    alert('Account created! Please login.');
+                    toggleAuthMode();
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) { alert(e.message || 'Signup failed'); }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+
+        function toggleAuthMode() {
+            const login = document.getElementById('loginForm');
+            const signup = document.getElementById('signupForm');
+            if (login.classList.contains('hidden')) {
+                login.classList.remove('hidden');
+                signup.classList.add('hidden');
+            } else {
+                login.classList.add('hidden');
+                signup.classList.remove('hidden');
+            }
+        }
+
+        let state = {
+            budget: {
+                blocked: 934,
+                job: 538,
+                expenses: { rent: 400, food: 200, transport: 50, entertainment: 50, other: 30 }
+            },
+            ledger: { entries: [] },
+            tasks: [],
+            events: [],
+            food: [
+                { id: 1, name: 'Vegetables & Fruits', cost: 40 },
+                { id: 2, name: 'Rice & Staples', cost: 15 },
+                { id: 3, name: 'Meat/Protein', cost: 30 },
+                { id: 4, name: 'Snacks & Drinks', cost: 15 }
+            ],
+            goals: [
+                { id: 1, name: 'Emergency Fund', current: 500, target: 1000, color: 'emerald' },
+                { id: 2, name: 'Travel Fund', current: 200, target: 500, color: 'blue' },
+                { id: 3, name: 'New Laptop', current: 300, target: 800, color: 'amber' }
+            ],
+            settings: { currency: '€', theme: 'light' }
+        };
+
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let charts = {};
+
+        // ============ THEME ============
+        function toggleTheme() {
+            state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+            applyTheme();
+            autoSave();
+        }
+
+        function applyTheme() {
+            if (state.settings.theme === 'dark') {
+                document.body.classList.add('dark');
+                document.getElementById('themeToggle').innerText = '☀️';
+            } else {
+                document.body.classList.remove('dark');
+                document.getElementById('themeToggle').innerText = '🌙';
+            }
+        }
+
+        // ============ BACKEND SYNC ============
+        async function syncWithBackend() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${API_URL}/data`, {
+                    headers: { 'username': currentUser }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Merge arrays if not present in saved data
+                    if (!data.food) data.food = state.food;
+                    if (!data.goals) data.goals = state.goals;
+                    state = { ...state, ...data };
+
+                    applyTheme();
+                    updateAllUI();
+                    showStatus("✓ Synced");
+                }
+            } catch (err) {
+                console.warn("Sync failed, using local state", err);
+            }
+        }
+
+        async function autoSave() {
+            try {
+                await fetch(`${API_URL}/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'username': currentUser
+                    },
+                    body: JSON.stringify(state)
+                });
+                showStatus("✓ Saved");
+            } catch (err) {
+                console.warn("Save failed", err);
+            }
+        }
+
+        function showStatus(msg) {
+            const el = document.getElementById('syncStatus');
+            el.innerText = msg;
+            el.style.opacity = "1";
+            setTimeout(() => el.style.opacity = "0", 2000);
+        }
+
+        // ============ UI UPDATES ============
+        function updateAllUI() {
+            updateBudgetUI();
+            renderLedger();
+            renderCalendar();
+            renderTasks();
+            renderUpcoming();
+            updateAnalytics();
+            initCharts();
+
+            // New render calls
+            renderFood();
+            renderGoals();
+        }
+
+        // omitted updateBudgetUI...
+
+        // ============ NAVIGATION ============
+        function showPage(id) {
+            ['tracker', 'ledger', 'study', 'analytics', 'food'].forEach(p => {
+                document.getElementById('page-' + p)?.classList.toggle('hidden', p !== id);
+                document.getElementById('btn-' + p)?.classList.toggle('active', p === id);
+            });
+
+            // Reinitialize charts when switching to their pages
+            if (id === 'tracker') initCashFlowChart();
+            if (id === 'analytics') {
+                initCategoryChart();
+                initTrendChart();
+            }
+        }
+
+        function updateBudgetUI() {
+            document.getElementById('incomeBlocked').value = state.budget.blocked || 934;
+            document.getElementById('incomeJob').value = state.budget.job || 538;
+            document.getElementById('expRent').value = state.budget.expenses?.rent || 400;
+            document.getElementById('expFood').value = state.budget.expenses?.food || 200;
+            document.getElementById('expTransport').value = state.budget.expenses?.transport || 50;
+            document.getElementById('expEntertainment').value = state.budget.expenses?.entertainment || 50;
+            document.getElementById('expOther').value = state.budget.expenses?.other || 30;
+
+            updateBudgetStats();
+        }
+
+        function updateBudget() {
+            state.budget.blocked = parseFloat(document.getElementById('incomeBlocked').value) || 0;
+            state.budget.job = parseFloat(document.getElementById('incomeJob').value) || 0;
+            state.budget.expenses = {
+                rent: parseFloat(document.getElementById('expRent').value) || 0,
+                food: parseFloat(document.getElementById('expFood').value) || 0,
+                transport: parseFloat(document.getElementById('expTransport').value) || 0,
+                entertainment: parseFloat(document.getElementById('expEntertainment').value) || 0,
+                other: parseFloat(document.getElementById('expOther').value) || 0
+            };
+
+            updateBudgetStats();
+            updateCashFlowChart();
+            autoSave();
+        }
+
+        function updateBudgetStats() {
+            const income = state.budget.blocked + state.budget.job;
+            const expenses = Object.values(state.budget.expenses).reduce((a, b) => a + b, 0);
+            const balance = income - expenses;
+            const savingsRate = income > 0 ? Math.round((balance / income) * 100) : 0;
+
+            document.getElementById('statIncome').textContent = `€${income.toFixed(0)}`;
+            document.getElementById('statExpenses').textContent = `€${expenses.toFixed(0)}`;
+            document.getElementById('statBalance').textContent = `€${balance.toFixed(0)}`;
+            document.getElementById('statSavings').textContent = `${savingsRate}%`;
+        }
+
+        // ============ CHARTS ============
+        function initCharts() {
+            initCashFlowChart();
+            initCategoryChart();
+            initTrendChart();
+        }
+
+        function initCashFlowChart() {
+            const ctx = document.getElementById('cashFlowChart');
+            if (!ctx) return;
+
+            if (charts.cashFlow) charts.cashFlow.destroy();
+
+            const income = state.budget.blocked + state.budget.job;
+            const exp = state.budget.expenses;
+
+            charts.cashFlow = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Income', 'Rent', 'Food', 'Transport', 'Entertainment', 'Other', 'Balance'],
+                    datasets: [{
+                        data: [income, exp.rent, exp.food, exp.transport, exp.entertainment, exp.other, income - Object.values(exp).reduce((a, b) => a + b, 0)],
+                        backgroundColor: ['#10b981', '#f43f5e', '#f59e0b', '#3b82f6', '#8b5cf6', '#6b7280', '#06b6d4'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function updateCashFlowChart() {
+            if (!charts.cashFlow) return;
+            const income = state.budget.blocked + state.budget.job;
+            const exp = state.budget.expenses;
+            charts.cashFlow.data.datasets[0].data = [
+                income, exp.rent, exp.food, exp.transport, exp.entertainment, exp.other,
+                income - Object.values(exp).reduce((a, b) => a + b, 0)
+            ];
+            charts.cashFlow.update();
+        }
+
+        function initCategoryChart() {
+            const ctx = document.getElementById('categoryChart');
+            if (!ctx) return;
+
+            if (charts.category) charts.category.destroy();
+
+            const categoryTotals = {};
+            state.ledger.entries.filter(e => e.type === 'expense').forEach(e => {
+                categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+            });
+
+            // Add budget expenses if no ledger entries
+            if (Object.keys(categoryTotals).length === 0) {
+                categoryTotals.rent = state.budget.expenses.rent;
+                categoryTotals.food = state.budget.expenses.food;
+                categoryTotals.transport = state.budget.expenses.transport;
+                categoryTotals.entertainment = state.budget.expenses.entertainment;
+                categoryTotals.other = state.budget.expenses.other;
+            }
+
+            charts.category = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryTotals).map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+                    datasets: [{
+                        data: Object.values(categoryTotals),
+                        backgroundColor: ['#f43f5e', '#f59e0b', '#3b82f6', '#8b5cf6', '#6b7280', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function initTrendChart() {
+            const ctx = document.getElementById('trendChart');
+            if (!ctx) return;
+
+            if (charts.trend) charts.trend.destroy();
+
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const income = state.budget.blocked + state.budget.job;
+            const expenses = Object.values(state.budget.expenses).reduce((a, b) => a + b, 0);
+
+            charts.trend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: months.map(() => income + Math.random() * 100 - 50),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Expenses',
+                            data: months.map(() => expenses + Math.random() * 80 - 40),
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // ============ LEDGER ============
+        function openLedgerModal() {
+            document.getElementById('ledgerDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('ledgerModal').classList.add('active');
+        }
+
+        function closeLedgerModal() {
+            document.getElementById('ledgerModal').classList.remove('active');
+            document.getElementById('ledgerDesc').value = '';
+            document.getElementById('ledgerAmount').value = '';
+        }
+
+        function saveLedgerEntry() {
+            const entry = {
+                id: Date.now(),
+                description: document.getElementById('ledgerDesc').value,
+                amount: parseFloat(document.getElementById('ledgerAmount').value) || 0,
+                type: document.getElementById('ledgerType').value,
+                category: document.getElementById('ledgerCategory').value,
+                date: document.getElementById('ledgerDate').value,
+                createdAt: new Date().toISOString()
+            };
+
+            if (!entry.description || !entry.amount) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            state.ledger.entries.push(entry);
+            closeLedgerModal();
+            renderLedger();
+            updateAnalytics();
+            initCategoryChart();
+            autoSave();
+        }
+
+        function deleteLedgerEntry(id) {
+            state.ledger.entries = state.ledger.entries.filter(e => e.id !== id);
+            renderLedger();
+            updateAnalytics();
+            initCategoryChart();
+            autoSave();
+        }
+
+        function renderLedger() {
+            const container = document.getElementById('ledgerRows');
+            const filter = document.getElementById('ledgerMonthFilter').value;
+
+            let entries = [...state.ledger.entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (filter !== 'all') {
+                entries = entries.filter(e => e.date && e.date.split('-')[1] === filter);
+            }
+
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 py-8">No entries yet. Click "+ Add Entry" to start tracking.</p>';
+            } else {
+                container.innerHTML = entries.map(e => `
+                    <div class="ledger-row">
+                        <span class="font-medium text-slate-600">${formatDate(e.date)}</span>
+                        <span class="font-medium">${e.description}</span>
+                        <span class="text-slate-500 capitalize">${getCategoryEmoji(e.category)} ${e.category}</span>
+                        <span class="font-bold ${e.type === 'income' ? 'income-text' : 'expense-text'}">
+                            ${e.type === 'income' ? '+' : '-'}€${e.amount.toFixed(2)}
+                        </span>
+                        <button onclick="deleteLedgerEntry(${e.id})" class="text-rose-500 hover:text-rose-700 font-bold">✕</button>
+                    </div>
+                `).join('');
+            }
+
+            // Update totals
+            const totalIncome = entries.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
+            const totalExpenses = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
+
+            document.getElementById('ledgerTotalIncome').textContent = `€${totalIncome.toFixed(2)}`;
+            document.getElementById('ledgerTotalExpenses').textContent = `€${totalExpenses.toFixed(2)}`;
+            document.getElementById('ledgerNetBalance').textContent = `€${(totalIncome - totalExpenses).toFixed(2)}`;
+        }
+
+        function getCategoryEmoji(cat) {
+            const emojis = { rent: '🏠', food: '🍔', transport: '🚌', entertainment: '🎬', salary: '💼', other: '📦' };
+            return emojis[cat] || '📦';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        }
+
+        // ============ CALENDAR ============
+        function renderCalendar() {
+            const container = document.getElementById('calendarGrid');
+            const today = new Date();
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const startDay = firstDay.getDay() || 7; // Monday = 1
+
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('currentMonthLabel').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            let html = '';
+
+            // Day headers
+            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
+                html += `<div class="calendar-header">${day}</div>`;
+            });
+
+            // Previous month days
+            const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
+            for (let i = startDay - 1; i > 0; i--) {
+                const day = prevMonthDays - i + 1;
+                html += `<div class="calendar-day other-month"><span class="day-number">${day}</span></div>`;
+            }
+
+            // Current month days
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+
+                const dayEvents = state.events.filter(e => e.date === dateStr);
+                const dayTasks = state.tasks.filter(t => t.dueDate === dateStr && !t.completed);
+                const allItems = [
+                    ...dayEvents.map(e => ({ ...e, isTask: false })),
+                    ...dayTasks.map(t => ({ ...t, title: t.name, type: 'task', isTask: true }))
+                ];
+
+                html += `
+                    <div class="calendar-day ${isToday ? 'today' : ''}" onclick="openEventModal('${dateStr}')">
+                        <span class="day-number ${isToday ? 'flex items-center justify-center' : ''}">${day}</span>
+                        ${allItems.slice(0, 2).map(e => `
+                            <span class="event-tag ${e.isTask ? 'bg-emerald-100 text-emerald-700' : 'event-' + e.type}">
+                                ${e.isTask ? '✅' : ''} ${e.title}
+                            </span>`).join('')}
+                        ${allItems.length > 2 ? `<span class="text-[10px] text-slate-400">+${allItems.length - 2} more</span>` : ''}
+                    </div>
+                `;
+            }
+
+            // Next month days
+            const totalCells = container.children.length || 42;
+            const remaining = 42 - (startDay - 1 + lastDay.getDate());
+            for (let i = 1; i <= remaining && i <= 14; i++) {
+                html += `<div class="calendar-day other-month"><span class="day-number">${i}</span></div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            renderCalendar();
+        }
+
+        function openEventModal(date) {
+            document.getElementById('eventDate').value = date;
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.remove('active');
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventTime').value = '';
+        }
+
+        function saveEvent() {
+            const event = {
+                id: Date.now(),
+                title: document.getElementById('eventTitle').value,
+                date: document.getElementById('eventDate').value,
+                type: document.getElementById('eventType').value,
+                time: document.getElementById('eventTime').value
+            };
+
+            if (!event.title) {
+                alert('Please enter an event title');
+                return;
+            }
+
+            state.events.push(event);
+            closeEventModal();
+            renderCalendar();
+            renderUpcoming();
+            autoSave();
+        }
+
+        function deleteEvent(id) {
+            state.events = state.events.filter(e => e.id !== id);
+            renderCalendar();
+            renderUpcoming();
+            autoSave();
+        }
+
+        // ============ TASKS ============
+        function openTaskModal() {
+            document.getElementById('taskDueDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('taskModal').classList.add('active');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+            document.getElementById('taskName').value = '';
+        }
+
+        function saveTask() {
+            const task = {
+                id: Date.now(),
+                name: document.getElementById('taskName').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                priority: document.getElementById('taskPriority').value,
+                category: document.getElementById('taskCategory').value || 'study',
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            if (!task.name) {
+                alert('Please enter a task name');
+                return;
+            }
+
+            state.tasks.push(task);
+            closeTaskModal();
+            renderTasks();
+            updateAnalytics();
+            autoSave();
+        }
+
+        function toggleTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                renderTasks();
+                updateAnalytics();
+                autoSave();
+            }
+        }
+
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            renderTasks();
+            updateAnalytics();
+            autoSave();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('taskList');
+            const sortedTasks = [...state.tasks].sort((a, b) => {
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
+            });
+
+            if (sortedTasks.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 py-4">No tasks yet</p>';
+            } else {
+                container.innerHTML = sortedTasks.map(t => `
+                    <div class="p-3 bg-slate-50 rounded-lg priority-${t.priority} flex items-center gap-3 ${t.completed ? 'opacity-50' : ''}">
+                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})" class="w-4 h-4 accent-emerald-600">
+                        <span class="text-xl">${getEventEmoji(t.category || 'study')}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium truncate ${t.completed ? 'line-through' : ''}">${t.name}</p>
+                            <p class="text-xs text-slate-400">${formatDate(t.dueDate)} • ${t.category || 'study'}</p>
+                        </div>
+                        <button onclick="deleteTask(${t.id})" class="text-rose-500 hover:text-rose-700 font-bold flex-shrink-0">✕</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderUpcoming() {
+            const container = document.getElementById('upcomingList');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const upcoming = [...state.events, ...state.tasks.map(t => ({ ...t, title: t.name, date: t.dueDate, type: 'task' }))]
+                .filter(e => {
+                    if (!e.date) return false;
+                    const eDate = new Date(e.date);
+                    eDate.setHours(0, 0, 0, 0); // specific date at midnight
+                    // Make sure we handle timezone offset if needed, but simple midnight comparison usually works for YYYY-MM-DD
+                    // Actually YYYY-MM-DD is parsed as UTC by Date.parse, but new Date('str') varies. 
+                    // To be safe, let's treat e.date (YYYY-MM-DD) as local midnight.
+                    // If e.date is YYYY-MM-DDs
+                    const parts = e.date.split('-');
+                    const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                    return localDate >= today;
+                })
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0, 5);
+
+            if (upcoming.length === 0) {
+                container.innerHTML = '<p class="text-slate-400">No upcoming events</p>';
+            } else {
+                container.innerHTML = upcoming.map(e => `
+                    <div class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
+                        <span class="event-tag event-${e.type} !mt-0">${e.type === 'task' ? '✅' : getEventEmoji(e.type)}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium truncate">${e.title}</p>
+                            <p class="text-xs text-slate-400">${formatDate(e.date)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function getEventEmoji(type) {
+            const emojis = {
+                exam: '📝', assignment: '📋', class: '📚', personal: '🎯',
+                study: '📚', work: '💼', other: '📦'
+            };
+            return emojis[type] || '📅';
+        }
+
+        // ============ ANALYTICS ============
+        function updateAnalytics() {
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            const monthEntries = state.ledger.entries.filter(e => e.date && e.date.startsWith(currentMonthStr));
+            const monthIncome = monthEntries.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
+            const monthExpenses = monthEntries.filter(e => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+            document.getElementById('analyticsMonthIncome').textContent = `€${monthIncome.toFixed(0)}`;
+            document.getElementById('analyticsMonthExpenses').textContent = `€${monthExpenses.toFixed(0)}`;
+            document.getElementById('analyticsAvgDaily').textContent = `€${(monthExpenses / daysInMonth).toFixed(0)}`;
+            document.getElementById('analyticsPendingTasks').textContent = state.tasks.filter(t => !t.completed).length;
+        }
+
+
+        function updateLedgerCategories() {
+            const type = document.getElementById('ledgerType').value;
+            const catSelect = document.getElementById('ledgerCategory');
+
+            if (type === 'income') {
+                catSelect.innerHTML = `
+                    <option value="salary">💼 Job/Salary</option>
+                    <option value="blocked">🔒 Blocked Account</option>
+                    <option value="other">💰 Other Income</option>
+                `;
+            } else {
+                catSelect.innerHTML = `
+                    <option value="rent">🏠 Rent</option>
+                    <option value="food">🍔 Food</option>
+                    <option value="transport">🚌 Transport</option>
+                    <option value="entertainment">🎬 Entertainment</option>
+                    <option value="study">🎓 Study</option>
+                    <option value="other">📦 Other</option>
+                `;
+            }
+        }
+
+        // ============ FOOD TRACKER ============
+        function renderFood() {
+            const container = document.getElementById('foodList');
+            const totalDisplay = document.getElementById('foodTotalDisplay');
+
+            if (state.food.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 py-4 col-span-3">No food items yet</p>';
+                totalDisplay.innerText = '€0';
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = state.food.map((item, i) => {
+                total += item.cost;
+                return `
+                <div class="grid grid-cols-[1fr_100px_80px] gap-4 px-4 py-2 items-center border-b border-slate-100 dark:border-slate-800">
+                    <span class="text-slate-700 dark:text-slate-300 font-medium">${item.name}</span>
+                    <span class="text-right text-slate-700 dark:text-slate-300">€${item.cost}</span>
+                    <div class="text-right">
+                        <button onclick="openFoodModal(${i})" class="text-emerald-600 hover:text-emerald-500 mr-2">✎</button>
+                        <button onclick="deleteFoodItem(${i})" class="text-rose-500 hover:text-rose-400 font-bold">×</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            totalDisplay.innerText = `€${total}`;
+        }
+
+        function openFoodModal(index = null) {
+            document.getElementById('foodModal').classList.add('active');
+            if (index !== null) {
+                const item = state.food[index];
+                document.getElementById('foodIndex').value = index;
+                document.getElementById('foodName').value = item.name;
+                document.getElementById('foodCost').value = item.cost;
+            } else {
+                document.getElementById('foodIndex').value = '';
+                document.getElementById('foodName').value = '';
+                document.getElementById('foodCost').value = '';
+            }
+        }
+
+        function closeFoodModal() {
+            document.getElementById('foodModal').classList.remove('active');
+        }
+
+        function saveFoodItem() {
+            const index = document.getElementById('foodIndex').value;
+            const item = {
+                name: document.getElementById('foodName').value,
+                cost: parseFloat(document.getElementById('foodCost').value) || 0
+            };
+
+            if (!item.name) return;
+
+            if (index !== '') {
+                state.food[index] = { ...state.food[index], ...item };
+            } else {
+                state.food.push({ id: Date.now(), ...item });
+            }
+
+            closeFoodModal();
+            renderFood();
+            autoSave();
+        }
+
+        function deleteFoodItem(index) {
+            state.food.splice(index, 1);
+            renderFood();
+            autoSave();
+        }
+
+        // ============ GOALS ============
+        function renderGoals() {
+            const container = document.getElementById('goalsList');
+            container.innerHTML = state.goals.map((g, i) => {
+                const percent = Math.min(100, Math.round((g.current / g.target) * 100));
+                return `
+                <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl relative group">
+                    <button onclick="openGoalModal(${i})" class="absolute top-2 right-2 p-1 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors" title="Edit Goal">✏️</button>
+                    <div class="flex justify-between mb-2">
+                        <span class="font-medium dark:text-slate-200">${g.name}</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">€${g.current} / €${g.target}</span>
+                    </div>
+                    <div class="h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                        <div class="h-full bg-${g.color}-500 rounded-full" style="width: ${percent}%"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openGoalModal(index = null) {
+            document.getElementById('goalModal').classList.add('active');
+            if (index !== null) {
+                const g = state.goals[index];
+                document.getElementById('goalIndex').value = index;
+                document.getElementById('goalName').value = g.name;
+                document.getElementById('goalCurrent').value = g.current;
+                document.getElementById('goalTarget').value = g.target;
+                document.getElementById('goalColor').value = g.color;
+            } else {
+                document.getElementById('goalIndex').value = '';
+                document.getElementById('goalName').value = '';
+                document.getElementById('goalCurrent').value = '';
+                document.getElementById('goalTarget').value = '';
+            }
+        }
+
+        function closeGoalModal() {
+            document.getElementById('goalModal').classList.remove('active');
+        }
+
+        function saveGoal() {
+            const index = document.getElementById('goalIndex').value;
+            const goal = {
+                name: document.getElementById('goalName').value,
+                current: parseFloat(document.getElementById('goalCurrent').value) || 0,
+                target: parseFloat(document.getElementById('goalTarget').value) || 0,
+                color: document.getElementById('goalColor').value
+            };
+
+            if (!goal.name) return;
+
+            if (index !== '') {
+                state.goals[index] = { ...state.goals[index], ...goal };
+            } else {
+                state.goals.push({ id: Date.now(), ...goal });
+            }
+
+            closeGoalModal();
+            renderGoals();
+            autoSave();
+        }
+
+        // ============ INIT ============
+        window.onload = () => {
+            checkAuth();
+            applyTheme();
+            updateAllUI();
+        };
+    </script>
+    <div id="authOverlay"
+        class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center transition-opacity duration-300 hidden">
+        <div
+            class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4 relative overflow-hidden">
+            <!-- Login Form -->
+            <div id="loginForm" class="transition-all duration-300">
+                <h2
+                    class="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent mb-2">
+                    Welcome Back</h2>
+                <p class="text-slate-500 dark:text-slate-400 mb-8">Sign in to continue to your dashboard</p>
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
+                        <input type="text" id="loginUser"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                            placeholder="Enter your username">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                        <input type="password" id="loginPass"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                            placeholder="Enter your password">
+                    </div>
+                    <button onclick="handleLogin()"
+                        class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-500 text-white rounded-xl font-bold shadow-lg hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 transition-all">Sign
+                        In</button>
+                </div>
+                <p class="mt-8 text-center text-slate-500 dark:text-slate-400">
+                    New here? <button onclick="toggleAuthMode()"
+                        class="text-emerald-600 font-bold hover:underline">Create Account</button>
+                </p>
+            </div>
+            <!-- Signup Form -->
+            <div id="signupForm" class="hidden transition-all duration-300">
+                <h2
+                    class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent mb-2">
+                    Create Account</h2>
+                <p class="text-slate-500 dark:text-slate-400 mb-8">Set up your personal space</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Choose
+                            Username</label>
+                        <input type="text" id="signupUser"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                            placeholder="Unique username">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                        <input type="password" id="signupPass"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                            placeholder="Strong password">
+                    </div>
+                    <button onclick="handleSignup()"
+                        class="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white rounded-xl font-bold shadow-lg hover:shadow-purple-500/25 transform hover:-translate-y-0.5 transition-all">Create
+                        Account</button>
+                </div>
+                <p class="mt-8 text-center text-slate-500 dark:text-slate-400">
+                    Already have an account? <button onclick="toggleAuthMode()"
+                        class="text-purple-600 font-bold hover:underline">Sign In</button>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
