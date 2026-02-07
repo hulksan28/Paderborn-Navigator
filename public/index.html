@@ -109,6 +109,49 @@
             color: #334155;
         }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        body.dark .modal-content {
+            background: #1e293b;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -629,8 +672,13 @@
                 <div class="lg:col-span-8 space-y-6">
                     <div class="glass-card p-6">
                         <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-xl font-bold flex items-center gap-2">🥗 Monthly Food Tracker</h2>
-                            <button onclick="openFoodModal()" class="btn-primary text-sm">+ Add Item</button>
+                            <h2 class="text-xl font-bold flex items-center gap-2">🥗 German Grocery Tracker</h2>
+                            <div class="flex gap-2">
+                                <button onclick="refreshFoodPrices()"
+                                    class="bg-gradient-to-r from-purple-600 to-blue-500 text-white px-3 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-1">🤖
+                                    AI Refresh Prices</button>
+                                <button onclick="openFoodModal()" class="btn-primary text-sm">+ Add Item</button>
+                            </div>
                         </div>
 
                         <div
@@ -1001,10 +1049,26 @@
             tasks: [],
             events: [],
             food: [
-                { id: 1, name: 'Vegetables & Fruits', cost: 40 },
-                { id: 2, name: 'Rice & Staples', cost: 15 },
-                { id: 3, name: 'Meat/Protein', cost: 30 },
-                { id: 4, name: 'Snacks & Drinks', cost: 15 }
+                { id: 1, name: 'Bread (Wholemeal 500g)', cost: 1.89, emoji: '🍞' },
+                { id: 2, name: 'Milk (1L)', cost: 1.25, emoji: '🥛' },
+                { id: 3, name: 'Eggs (10 pack)', cost: 2.89, emoji: '🥚' },
+                { id: 4, name: 'Butter (250g)', cost: 2.49, emoji: '🧈' },
+                { id: 5, name: 'Cheese Gouda (150g)', cost: 1.89, emoji: '🧀' },
+                { id: 6, name: 'Chicken Breast (1kg)', cost: 7.32, emoji: '🍗' },
+                { id: 7, name: 'Ground Beef (500g)', cost: 4.99, emoji: '🥩' },
+                { id: 8, name: 'Pasta (1kg)', cost: 2.78, emoji: '🍝' },
+                { id: 9, name: 'Rice Basmati (1kg)', cost: 2.99, emoji: '🍚' },
+                { id: 10, name: 'Potatoes (1kg)', cost: 0.97, emoji: '🥔' },
+                { id: 11, name: 'Apples (1kg)', cost: 2.20, emoji: '🍎' },
+                { id: 12, name: 'Bananas (1kg)', cost: 1.49, emoji: '🍌' },
+                { id: 13, name: 'Tomatoes (500g)', cost: 1.79, emoji: '🍅' },
+                { id: 14, name: 'Onions (1kg)', cost: 1.29, emoji: '🧅' },
+                { id: 15, name: 'Cucumber', cost: 0.80, emoji: '🥒' },
+                { id: 16, name: 'Sunflower Oil (1L)', cost: 2.69, emoji: '🫒' },
+                { id: 17, name: 'Coffee (200g)', cost: 4.99, emoji: '☕' },
+                { id: 18, name: 'Orange Juice (1L)', cost: 1.99, emoji: '🍊' },
+                { id: 19, name: 'Yogurt (500g)', cost: 1.49, emoji: '🥄' },
+                { id: 20, name: 'Oat Flakes (1kg)', cost: 1.98, emoji: '🥣' }
             ],
             goals: [
                 { id: 1, name: 'Emergency Fund', current: 500, target: 1000, color: 'emerald' },
@@ -1662,9 +1726,12 @@
             container.innerHTML = state.food.map((item, i) => {
                 total += item.cost;
                 return `
-                <div class="grid grid-cols-[1fr_100px_80px] gap-4 px-4 py-2 items-center border-b border-slate-100 dark:border-slate-800">
-                    <span class="text-slate-700 dark:text-slate-300 font-medium">${item.name}</span>
-                    <span class="text-right text-slate-700 dark:text-slate-300">€${item.cost}</span>
+                <div class="grid grid-cols-[1fr_100px_80px] gap-4 px-4 py-2 items-center border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <span class="text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                        <span class="text-lg">${item.emoji || '🛒'}</span>
+                        ${item.name}
+                    </span>
+                    <span class="text-right text-slate-700 dark:text-slate-300 font-semibold">€${item.cost.toFixed(2)}</span>
                     <div class="text-right">
                         <button onclick="openFoodModal(${i})" class="text-emerald-600 hover:text-emerald-500 mr-2">✎</button>
                         <button onclick="deleteFoodItem(${i})" class="text-rose-500 hover:text-rose-400 font-bold">×</button>
@@ -1717,6 +1784,36 @@
             state.food.splice(index, 1);
             renderFood();
             autoSave();
+        }
+
+        async function refreshFoodPrices() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Refreshing...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(API_URL + '/ai/refresh-prices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'username': currentUser }
+                });
+                const data = await res.json();
+
+                if (data.success && data.food) {
+                    state.food = data.food;
+                    renderFood();
+                    autoSave();
+                    btn.innerHTML = '✅ Updated!';
+                    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                } else {
+                    throw new Error(data.error || 'Failed to refresh');
+                }
+            } catch (err) {
+                console.error('Price refresh error:', err);
+                btn.innerHTML = '❌ Error';
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+            }
+            btn.disabled = false;
         }
 
         // ============ SCHEDULE ============
@@ -1871,6 +1968,159 @@
             autoSave();
         }
 
+        // ============ AI FEATURES ============
+        function toggleAIChat() {
+            const modal = document.getElementById('aiChatModal');
+            modal.classList.toggle('hidden');
+        }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('aiChatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesDiv = document.getElementById('aiChatMessages');
+
+            // Add user message
+            messagesDiv.innerHTML += `
+                <div class="flex gap-2 justify-end">
+                    <div class="bg-gradient-to-r from-purple-600 to-blue-500 text-white p-3 rounded-xl rounded-tr-none shadow-sm max-w-[85%]">
+                        <p class="text-sm">${message}</p>
+                    </div>
+                    <span class="text-lg">👤</span>
+                </div>`;
+            input.value = '';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Add typing indicator
+            const typingId = 'typing-' + Date.now();
+            messagesDiv.innerHTML += `
+                <div id="${typingId}" class="flex gap-2">
+                    <span class="text-lg">🤖</span>
+                    <div class="bg-white dark:bg-slate-700 p-3 rounded-xl rounded-tl-none shadow-sm">
+                        <p class="text-sm text-slate-500 animate-pulse">Thinking...</p>
+                    </div>
+                </div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const res = await fetch(API_URL + '/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'username': currentUser },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+
+                document.getElementById(typingId)?.remove();
+
+                messagesDiv.innerHTML += `
+                    <div class="flex gap-2">
+                        <span class="text-lg">🤖</span>
+                        <div class="bg-white dark:bg-slate-700 p-3 rounded-xl rounded-tl-none shadow-sm max-w-[85%]">
+                            <p class="text-sm text-slate-700 dark:text-slate-200">${data.response || data.error || 'Error getting response'}</p>
+                        </div>
+                    </div>`;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } catch (err) {
+                document.getElementById(typingId)?.remove();
+                messagesDiv.innerHTML += `
+                    <div class="flex gap-2">
+                        <span class="text-lg">🤖</span>
+                        <div class="bg-rose-100 dark:bg-rose-900/30 p-3 rounded-xl rounded-tl-none shadow-sm">
+                            <p class="text-sm text-rose-600 dark:text-rose-400">Sorry, I couldn't process that. Please try again.</p>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        async function getAIInsights() {
+            const modal = document.getElementById('aiInsightsModal');
+            const content = document.getElementById('aiInsightsContent');
+            modal.classList.add('active');
+            content.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin text-4xl">⏳</div></div>';
+
+            try {
+                const res = await fetch(API_URL + '/ai/insights', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'username': currentUser }
+                });
+                const data = await res.json();
+
+                content.innerHTML = `
+                    <div class="flex gap-4 mb-4">
+                        <div class="flex-1 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-4 rounded-xl text-center">
+                            <p class="text-xs text-slate-500 mb-1">Savings Rate</p>
+                            <p class="text-xl font-bold text-emerald-600">${data.savingsRate || 'N/A'}</p>
+                        </div>
+                        <div class="flex-1 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-xl text-center">
+                            <p class="text-xs text-slate-500 mb-1">Financial Health</p>
+                            <p class="text-xl font-bold text-purple-600">${data.healthScore || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        ${(data.insights || []).map(i => `
+                            <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-lg">${i.emoji}</span>
+                                    <span class="font-semibold text-sm dark:text-slate-200">${i.title}</span>
+                                </div>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">${i.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            } catch (err) {
+                content.innerHTML = '<p class="text-center text-rose-500 py-8">Failed to load insights. Please try again.</p>';
+            }
+        }
+
+        function closeInsightsModal() {
+            document.getElementById('aiInsightsModal').classList.remove('active');
+        }
+
+        async function getScheduleOptimization() {
+            const modal = document.getElementById('aiScheduleModal');
+            const content = document.getElementById('aiScheduleContent');
+            modal.classList.add('active');
+            content.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin text-4xl">⏳</div></div>';
+
+            try {
+                const res = await fetch(API_URL + '/ai/optimize-schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'username': currentUser }
+                });
+                const data = await res.json();
+
+                content.innerHTML = `
+                    <div class="flex gap-4 mb-4">
+                        <div class="flex-1 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl text-center">
+                            <p class="text-xs text-slate-500 mb-1">Focus Area</p>
+                            <p class="text-sm font-bold text-amber-600">${data.focusArea || 'N/A'}</p>
+                        </div>
+                        <div class="flex-1 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl text-center">
+                            <p class="text-xs text-slate-500 mb-1">Balance Score</p>
+                            <p class="text-xl font-bold text-blue-600">${data.balanceScore || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        ${(data.suggestions || []).map(s => `
+                            <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-lg">${s.emoji}</span>
+                                    <span class="font-semibold text-sm dark:text-slate-200">${s.title}</span>
+                                </div>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">${s.action}</p>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            } catch (err) {
+                content.innerHTML = '<p class="text-center text-rose-500 py-8">Failed to load suggestions. Please try again.</p>';
+            }
+        }
+
+        function closeScheduleOptimizerModal() {
+            document.getElementById('aiScheduleModal').classList.remove('active');
+        }
+
         // ============ INIT ============
         window.onload = () => {
             checkAuth();
@@ -1944,6 +2194,90 @@
             </div>
         </div>
     </div>
+
+    <!-- AI Chat Widget -->
+    <div id="aiChatWidget" class="fixed bottom-6 right-6 z-50">
+        <button onclick="toggleAIChat()" id="aiChatBtn"
+            class="w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-500 rounded-full shadow-lg shadow-purple-500/30 flex items-center justify-center text-white text-2xl hover:scale-110 transition-transform">
+            🤖
+        </button>
+    </div>
+
+    <!-- AI Chat Modal -->
+    <div id="aiChatModal"
+        class="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-3rem)] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 hidden overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-blue-500 p-4 text-white">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🤖</span>
+                    <div>
+                        <h4 class="font-bold">AI Assistant</h4>
+                        <p class="text-xs opacity-80">Powered by Groq</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="getAIInsights()"
+                        class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition-colors">📊
+                        Insights</button>
+                    <button onclick="getScheduleOptimization()"
+                        class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition-colors">📅
+                        Optimize</button>
+                </div>
+            </div>
+        </div>
+        <div id="aiChatMessages" class="h-72 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
+            <div class="flex gap-2">
+                <span class="text-lg">🤖</span>
+                <div class="bg-white dark:bg-slate-700 p-3 rounded-xl rounded-tl-none shadow-sm max-w-[85%]">
+                    <p class="text-sm text-slate-700 dark:text-slate-200">Hi! I'm your AI assistant. Ask me about your
+                        budget, spending habits, or how to optimize your schedule! 💡</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div class="flex gap-2">
+                <input type="text" id="aiChatInput" class="flex-1 input-field text-sm" placeholder="Ask me anything..."
+                    onkeypress="if(event.key==='Enter') sendAIMessage()">
+                <button onclick="sendAIMessage()"
+                    class="bg-gradient-to-r from-purple-600 to-blue-500 text-white px-4 py-2 rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights Modal -->
+    <div id="aiInsightsModal" class="modal-overlay">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">📊 AI Spending Insights</h3>
+                <button onclick="closeInsightsModal()"
+                    class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+            <div id="aiInsightsContent" class="space-y-4">
+                <div class="flex items-center justify-center py-8">
+                    <div class="animate-spin text-4xl">⏳</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Schedule Optimizer Modal -->
+    <div id="aiScheduleModal" class="modal-overlay">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">📅 Schedule Optimization</h3>
+                <button onclick="closeScheduleOptimizerModal()"
+                    class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+            <div id="aiScheduleContent" class="space-y-4">
+                <div class="flex items-center justify-center py-8">
+                    <div class="animate-spin text-4xl">⏳</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
